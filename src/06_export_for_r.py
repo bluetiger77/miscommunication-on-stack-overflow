@@ -25,7 +25,7 @@ def _category_names_from_db(con: duckdb.DuckDBPyConnection) -> list[str]:
     return [c[len("cat_"):] for c in cols if c.startswith("cat_")]
 
 def export_contingency_tags(con: duckdb.DuckDBPyConnection):
-    """Overall contingency table for Track A (tags)."""
+    """Overall contingency table for community tags."""
     df = con.execute(f"""
         SELECT
             t.tag                                    AS topic,
@@ -44,7 +44,7 @@ def export_contingency_tags(con: duckdb.DuckDBPyConnection):
     print(f"contingency_tags.csv: {len(df)} rows → {out}")
 
 def export_contingency_tags_by_category(con: duckdb.DuckDBPyConnection, cats: list[str]):
-    """Per-category contingency table for Track A (tags), long format.
+    """Per-category contingency table for community tags, long format.
 
     Columns: topic, category, n_miscomm, n_no_miscomm, n_total
     One row per (tag, category) pair. n_total is constant across categories

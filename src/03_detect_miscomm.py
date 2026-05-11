@@ -346,7 +346,8 @@ def detect_categories(text: str) -> dict[str, bool]:
 # ---------------------------------------------------------------------------
 
 def _build_schema(id_field: str) -> pa.Schema:
-    """Build the parquet schema: id + question_id + has_miscomm + one bool per category."""
+    """Build the parquet schema: id + question_id + has_miscomm + one bool per category.
+    id_field is the name of the primary key column ('answer_id' or 'comment_id')."""
     fields = [
         (id_field,    pa.int64()),
         ("question_id", pa.int64()),
@@ -382,7 +383,10 @@ def flag_answers(con: duckdb.DuckDBPyConnection):
 
         for answer_id, question_id, body in rows:
             text = html_to_text(body or "")
-            cats = detect_categories(text)
+            if contains_miscomm(text):
+                cats = detect_categories(text)
+            else:
+                cats = {cat: False for cat in CATEGORY_NAMES}
             ids.append(answer_id)
             qids.append(question_id)
             flags.append(any(cats.values()))
@@ -430,7 +434,10 @@ def flag_comments(con: duckdb.DuckDBPyConnection):
 
         for comment_id, question_id, text in rows:
             text = text or ""
-            cats = detect_categories(text)
+            if contains_miscomm(text):
+                cats = detect_categories(text)
+            else:
+                cats = {cat: False for cat in CATEGORY_NAMES}
             ids.append(comment_id)
             qids.append(question_id)
             flags.append(any(cats.values()))
@@ -456,7 +463,8 @@ def build_question_miscomm_table(con: duckdb.DuckDBPyConnection):
     answers_path  = os.path.join(PARQUET_DIR, "answers_flagged.parquet")
     comments_path = os.path.join(PARQUET_DIR, "comments_flagged.parquet")
 
-    # Build per-category BOOL_OR expressions.
+    # For each category, aggregate across all answers/comments per question:
+    # BOOL_OR returns True if any row for that question flagged the category.
     cat_selects = ",\n            ".join(
         f"BOOL_OR(cat_{cat}) AS cat_{cat}" for cat in CATEGORY_NAMES
     )

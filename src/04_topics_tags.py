@@ -31,6 +31,11 @@ def parse_tags(raw: str) -> list[str]:
     return TAG_RE.findall(raw)
 
 def explode_tags(con: duckdb.DuckDBPyConnection):
+    """
+    Reads questions in batches, parses each question's raw tag string into
+    individual tags, and writes one (question_id, tag) row per each tag for the question to a
+    Parquet file at PARQUET_DIR/question_tags.parquet.
+    """
     out_path = os.path.join(PARQUET_DIR, "question_tags.parquet")
 
     # One row per (question_id, tag) pair — a question with 5 tags produces 5 rows.

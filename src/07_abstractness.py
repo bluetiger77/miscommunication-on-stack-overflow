@@ -30,8 +30,9 @@ NORMS_PATH  = os.path.join(ROOT, "data", "concreteness_ratings.xlsx")
 RESULTS_DIR = os.path.join(ROOT, "results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# Number of question titles to sample per topic. Large enough for a stable
-# average; small enough to run quickly.
+# Number of question titles to sample per topic. In 07a_sample_stability.py shows mean concreteness scores converge
+# by n=200-300 (std < ±0.02 across 10 repeated draws); 500 provides a
+# comfortable margin with negligible additional variance.
 SAMPLE_SIZE = 500
 
 # Minimum number of questions a topic must have to be included (same as the rest of the pipeline).
@@ -65,7 +66,7 @@ def score_titles(titles: list[str], norms: dict[str, float]) -> tuple[int, float
     return len(scores), sum(scores) / len(scores)
 
 def score_topics_tags(con: duckdb.DuckDBPyConnection, norms: dict[str, float]) -> pd.DataFrame:
-    """Track A: score each tag by sampling question titles."""
+    """Score each tag by sampling question titles."""
     # Get all qualifying tags.
     tags = con.execute(f"""
         SELECT tag
